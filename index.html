@@ -1,0 +1,907 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="theme-color" content="#06110d">
+  <title>Render Byte</title>
+
+  <style>
+    *{box-sizing:border-box}
+
+    html,body{
+      margin:0;
+      min-height:100%;
+      background:#020806;
+      color:#d8e4df;
+      font-family:Inter,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+    }
+
+    body{
+      background:
+        radial-gradient(circle at 15% 0%,rgba(0,255,150,.12),transparent 32%),
+        radial-gradient(circle at 95% 18%,rgba(0,190,120,.08),transparent 28%),
+        linear-gradient(145deg,#07150f 0%,#020806 45%,#010504 100%);
+    }
+
+    button,input{font:inherit}
+
+    .app{
+      width:min(100%,760px);
+      margin:auto;
+      padding:22px 12px 28px;
+    }
+
+    header{
+      display:flex;
+      align-items:flex-start;
+      justify-content:space-between;
+      gap:12px;
+      margin-bottom:18px;
+    }
+
+    .brand h1{
+      margin:0;
+      font-size:25px;
+      line-height:1;
+      font-weight:500;
+      letter-spacing:-.7px;
+      font-family:"Trebuchet MS",sans-serif;
+    }
+
+    .dot{
+      display:inline-block;
+      width:7px;
+      height:7px;
+      margin-left:4px;
+      border-radius:50%;
+      background:#28e69b;
+      box-shadow:0 0 12px #28e69b;
+      vertical-align:middle;
+    }
+
+    .handle{
+      margin-top:7px;
+      font-size:11px;
+      color:#688078;
+    }
+
+    .top-actions{
+      display:flex;
+      gap:7px;
+    }
+
+    .top-actions button,
+    .clear-btn{
+      border:1px solid #163128;
+      background:rgba(8,18,14,.75);
+      color:#9caea8;
+      border-radius:8px;
+      padding:8px 12px;
+      font-size:10px;
+      letter-spacing:.7px;
+      cursor:pointer;
+    }
+
+    .top-actions button:hover,
+    .clear-btn:hover{
+      border-color:#287b5b;
+      color:#d8e4df;
+    }
+
+    /* INPUT / PREVIEW */
+
+    .drop{
+      position:relative;
+      min-height:181px;
+      border:1px solid #173228;
+      border-radius:14px;
+      overflow:hidden;
+      background:
+        linear-gradient(135deg,rgba(10,28,21,.9),rgba(3,12,9,.92));
+      cursor:pointer;
+      isolation:isolate;
+    }
+
+    .drop::before{
+      content:"";
+      position:absolute;
+      inset:-1px;
+      border-radius:15px;
+      padding:1px;
+      background:
+        conic-gradient(
+          from 0deg,
+          transparent 0deg,
+          transparent 285deg,
+          rgba(43,235,157,.05) 300deg,
+          #29e69b 325deg,
+          rgba(43,235,157,.05) 350deg,
+          transparent 360deg
+        );
+      -webkit-mask:
+        linear-gradient(#000 0 0) content-box,
+        linear-gradient(#000 0 0);
+      -webkit-mask-composite:xor;
+      mask-composite:exclude;
+      animation:spinBorder 4s linear infinite;
+      z-index:3;
+      pointer-events:none;
+    }
+
+    @keyframes spinBorder{
+      to{transform:rotate(360deg)}
+    }
+
+    .drop.empty{
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      text-align:center;
+    }
+
+    .empty-content{
+      position:relative;
+      z-index:2;
+    }
+
+    .upload-icon{
+      width:52px;
+      height:52px;
+      margin:0 auto 13px;
+      border:1px solid #23523e;
+      border-radius:50%;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      color:#45c993;
+      font-size:21px;
+    }
+
+    .drop-title{
+      font-family:Georgia,serif;
+      font-size:15px;
+      color:#b7c5c0;
+    }
+
+    .drop-sub{
+      margin-top:6px;
+      font-size:10px;
+      color:#667973;
+    }
+
+    .drop-file{
+      margin-top:10px;
+      font-size:10px;
+      color:#37b985;
+      overflow:hidden;
+      text-overflow:ellipsis;
+      white-space:nowrap;
+      max-width:90%;
+      margin-left:auto;
+      margin-right:auto;
+    }
+
+    #file-input{display:none}
+
+    /* VIDEO INSIDE INPUT */
+
+    .input-preview{
+      position:absolute;
+      inset:0;
+      display:none;
+      z-index:2;
+      background:#000;
+    }
+
+    .input-preview video{
+      width:100%;
+      height:100%;
+      display:block;
+      object-fit:contain;
+      background:#000;
+    }
+
+    .preview-shade{
+      position:absolute;
+      inset:0;
+      pointer-events:none;
+      background:
+        linear-gradient(
+          to bottom,
+          rgba(0,0,0,.72),
+          transparent 22%,
+          transparent 72%,
+          rgba(0,0,0,.78)
+        );
+    }
+
+    .preview-top{
+      position:absolute;
+      left:13px;
+      right:13px;
+      top:11px;
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:10px;
+      z-index:2;
+      pointer-events:none;
+    }
+
+    .preview-label{
+      padding:5px 8px;
+      border:1px solid rgba(61,207,151,.35);
+      background:rgba(2,10,7,.68);
+      border-radius:6px;
+      color:#a9c8bc;
+      font-size:9px;
+      letter-spacing:.7px;
+    }
+
+    .preview-size{
+      color:#80b5a0;
+      font-size:9px;
+      white-space:nowrap;
+    }
+
+    .preview-bottom{
+      position:absolute;
+      left:13px;
+      right:13px;
+      bottom:11px;
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:10px;
+      z-index:2;
+      pointer-events:none;
+    }
+
+    .preview-name{
+      max-width:70%;
+      overflow:hidden;
+      text-overflow:ellipsis;
+      white-space:nowrap;
+      color:#d3ded9;
+      font-size:10px;
+    }
+
+    .preview-change{
+      color:#42d298;
+      font-size:9px;
+      letter-spacing:.6px;
+    }
+
+    .drop.has-video{
+      min-height:230px;
+    }
+
+    .drop.has-video .empty-content{
+      display:none;
+    }
+
+    .drop.has-video .input-preview{
+      display:block;
+    }
+
+    /* SECTIONS */
+
+    .section-title{
+      margin:14px 0 8px;
+      color:#61726c;
+      font-size:10px;
+      letter-spacing:1.1px;
+    }
+
+    .media-box,
+    .process-box,
+    .result-box{
+      border:1px solid #12271f;
+      border-radius:13px;
+      background:rgba(5,13,10,.72);
+      padding:10px;
+    }
+
+    .range-banner{
+      border:1px solid #174b37;
+      background:rgba(8,37,27,.48);
+      border-radius:8px;
+      padding:8px 10px;
+      font-size:10px;
+      color:#43c993;
+      margin-bottom:8px;
+    }
+
+    .media-grid{
+      display:grid;
+      grid-template-columns:1fr 1fr;
+      gap:0 18px;
+    }
+
+    .media-item{
+      min-height:37px;
+      border-bottom:1px solid #11231d;
+      padding:7px 0;
+    }
+
+    .media-label{
+      color:#5f706a;
+      font-size:9px;
+      letter-spacing:.7px;
+      text-transform:uppercase;
+    }
+
+    .media-value{
+      margin-top:4px;
+      color:#bdc9c5;
+      font-size:10px;
+      text-align:right;
+    }
+
+    .media-item{
+      display:grid;
+      grid-template-columns:1fr 1fr;
+      align-items:center;
+    }
+
+    .file-row{
+      display:flex;
+      align-items:center;
+      justify-content:flex-end;
+      gap:8px;
+      margin-bottom:6px;
+    }
+
+    .file-row span{
+      color:#bc706e;
+      font-size:9px;
+      cursor:pointer;
+    }
+
+    /* SETTINGS */
+
+    .settings-head{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      margin-top:13px;
+      margin-bottom:8px;
+    }
+
+    .settings-title{
+      color:#667771;
+      font-size:10px;
+      letter-spacing:1px;
+    }
+
+    .preset-badge{
+      padding:5px 9px;
+      border-radius:7px;
+      background:#123a2a;
+      color:#65d6a8;
+      font-size:9px;
+    }
+
+    .settings{
+      display:grid;
+      grid-template-columns:1fr 1fr;
+      gap:8px;
+    }
+
+    .setting{
+      border:1px solid #173028;
+      background:#07110d;
+      border-radius:10px;
+      padding:11px 10px;
+      text-align:center;
+      color:#a9b7b2;
+      cursor:pointer;
+    }
+
+    .setting.active{
+      border-color:#2fd597;
+      box-shadow:0 0 0 1px rgba(47,213,151,.15);
+      color:#50d99e;
+    }
+
+    .setting strong{
+      display:block;
+      font-size:13px;
+      font-weight:400;
+    }
+
+    .setting small{
+      display:block;
+      margin-top:4px;
+      color:#64746e;
+      font-size:9px;
+    }
+
+    .encoder-note{
+      margin:8px 2px 0;
+      color:#687871;
+      font-size:9px;
+    }
+
+    /* BUTTONS */
+
+    .action-row{
+      display:grid;
+      grid-template-columns:1fr 84px;
+      gap:8px;
+      margin-top:14px;
+    }
+
+    .render-btn{
+      height:42px;
+      border:0;
+      border-radius:9px;
+      background:linear-gradient(90deg,#12b879,#24d899);
+      color:#02130c;
+      font-size:11px;
+      font-weight:600;
+      letter-spacing:.7px;
+      cursor:pointer;
+    }
+
+    .render-btn:disabled{
+      opacity:.45;
+      cursor:not-allowed;
+    }
+
+    .clear-btn{
+      height:42px;
+    }
+
+    /* PIPE */
+
+    .pipeline{
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      gap:8px;
+      margin:12px 0;
+      color:#566862;
+      font-size:9px;
+    }
+
+    .pipeline .active{
+      color:#48d399;
+    }
+
+    .arrow{color:#31453d}
+
+    /* PROCESS */
+
+    .process-box{
+      padding:10px;
+    }
+
+    .process-top{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      color:#677872;
+      font-size:9px;
+    }
+
+    .percent{
+      color:#42d398;
+      font-size:16px;
+    }
+
+    .progress-track{
+      height:3px;
+      background:#12221c;
+      border-radius:4px;
+      overflow:hidden;
+      margin:8px 0;
+    }
+
+    .progress-bar{
+      width:0%;
+      height:100%;
+      background:#29d294;
+      box-shadow:0 0 8px rgba(41,210,148,.5);
+      transition:width .15s linear;
+    }
+
+    .timing{
+      display:flex;
+      justify-content:space-between;
+      color:#687871;
+      font-size:9px;
+      margin-bottom:7px;
+    }
+
+    .status{
+      color:#43c993;
+      font-size:9px;
+      margin-bottom:7px;
+    }
+
+    .status.error{
+      color:#d87570;
+    }
+
+    .log-wrap{
+      position:relative;
+    }
+
+    .log{
+      height:130px;
+      overflow:auto;
+      border:1px solid #14251f;
+      border-radius:8px;
+      padding:8px;
+      padding-right:50px;
+      background:#020705;
+      color:#71837b;
+      font-family:monospace;
+      font-size:8px;
+      line-height:1.45;
+      white-space:pre-wrap;
+      word-break:break-word;
+    }
+
+    .copy-btn{
+      position:absolute;
+      top:5px;
+      right:5px;
+      border:1px solid #1b3a2e;
+      border-radius:6px;
+      background:#07130e;
+      color:#82a79a;
+      font-size:8px;
+      padding:5px 7px;
+      cursor:pointer;
+    }
+
+    /* RESULT */
+
+    #output-section{
+      display:none;
+    }
+
+    .result-preview{
+      width:100%;
+      max-height:420px;
+      border-radius:9px;
+      background:#000;
+      display:block;
+    }
+
+    .result-info{
+      margin-top:8px;
+      color:#74847e;
+      font-size:9px;
+    }
+
+    .patch-btn,
+    .download-btn{
+      width:100%;
+      height:38px;
+      margin-top:9px;
+      border-radius:8px;
+      cursor:pointer;
+      font-size:10px;
+      letter-spacing:.6px;
+    }
+
+    .patch-btn{
+      border:1px solid #27c88d;
+      background:#092219;
+      color:#46d69d;
+    }
+
+    .download-btn{
+      border:0;
+      background:#19bd80;
+      color:#02130c;
+      font-weight:600;
+    }
+
+    .patch-status{
+      margin-top:8px;
+      font-size:9px;
+      color:#74847e;
+    }
+
+    footer{
+      text-align:center;
+      margin-top:16px;
+      color:#3d5149;
+      font-size:8px;
+    }
+
+    @media(max-width:520px){
+      .app{
+        padding:17px 12px 24px;
+      }
+
+      .drop.has-video{
+        min-height:220px;
+      }
+
+      .brand h1{
+        font-size:23px;
+      }
+    }
+
+    .pipeline span.complete{color:#32d899}
+    .pipeline span.active{color:#32d899; text-shadow:0 0 12px rgba(50,216,153,.35)}
+    .final-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:10px}
+    .final-grid div{padding:9px 8px;border:1px solid #163128;border-radius:9px;background:rgba(7,17,13,.55)}
+    .final-grid span{display:block;font-size:8px;letter-spacing:.7px;color:#60746d}
+    .final-grid strong{display:block;margin-top:4px;font-size:11px;color:#dbe8e2;font-weight:600;white-space:nowrap}
+    .modal-backdrop{position:fixed;inset:0;z-index:50;display:none;align-items:center;justify-content:center;padding:18px;background:rgba(0,0,0,.72);backdrop-filter:blur(7px)}
+    .modal-backdrop.open{display:flex}
+    .modal{width:min(560px,100%);max-height:min(82dvh,680px);overflow:auto;border:1px solid #244538;border-radius:14px;background:#07100c;box-shadow:0 20px 70px rgba(0,0,0,.55)}
+    .modal-head{display:flex;align-items:center;justify-content:space-between;padding:13px 14px;border-bottom:1px solid #183229}
+    .modal-title{margin:0;font-size:13px;font-weight:650;color:#dce8e3}
+    .modal-close{border:0;background:transparent;color:#788b83;font-size:22px;line-height:1;cursor:pointer;padding:0 2px}
+    .modal-body{padding:14px}
+    .tutorial-frame{display:block;width:100%;height:430px;border:0;border-radius:10px;background:#020806}
+    .modal-player{display:block;width:100%;max-height:65dvh;border-radius:10px;background:#000}
+    .support-content{text-align:center}
+    .qris-wrap{display:flex;justify-content:center;padding:10px;border:1px solid #20382f;border-radius:10px;background:#f7f7f7}
+    .qris-image{display:block;width:min(290px,100%);height:auto;border-radius:4px}
+    .support-note{margin:11px 0 0;color:#84968f;font-size:10px;line-height:1.6}
+    .modal-body p{margin:0 0 12px;color:#a9b7b1;font-size:11px;line-height:1.7}
+    .modal-link{display:inline-block;color:#32d899;text-decoration:none;border:1px solid #24543f;border-radius:8px;padding:9px 11px;font-size:10px;letter-spacing:.5px}
+    @media(max-width:560px){.final-grid{grid-template-columns:repeat(2,1fr)}.tutorial-frame{height:58dvh}}
+    /* MUSIC */
+    .music-row{display:flex;align-items:center;gap:9px;margin-top:10px}
+    .music-btn{border:1px solid #163128;background:rgba(8,18,14,.75);color:#9caea8;border-radius:8px;padding:9px 13px;font-size:10px;letter-spacing:.7px;cursor:pointer;white-space:nowrap}
+    .music-btn:hover{border-color:#287b5b;color:#d8e4df}
+    .music-btn:disabled{opacity:.45;cursor:not-allowed}
+    .music-name{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:10px;color:#566862}
+    .music-name.on{color:#43c993}
+    .music-clear{color:#bc706e;font-size:12px;cursor:pointer;padding:4px 6px}
+  </style>
+</head>
+
+<body>
+
+<div class="app">
+
+  <header>
+    <div class="brand">
+      <h1>Render Byte<span class="dot"></span></h1>
+      <div class="handle">@totolat</div>
+    </div>
+
+    <div class="top-actions">
+      <button id="btn-patch-top">PATCH</button>
+      <button id="btn-tutorial">TUTORIAL</button>
+      <button id="btn-support">SUPPORT</button>
+    </div>
+  </header>
+
+  <!-- INPUT + PREVIEW -->
+  <div id="drop" class="drop empty">
+
+    <input
+      id="file-input"
+      type="file"
+      accept="video/mp4,video/*"
+    >
+
+    <div class="empty-content">
+      <div class="upload-icon">⇧</div>
+      <div class="drop-title">Drag and drop your video here</div>
+      <div class="drop-sub">or click to browse files (MP4 only)</div>
+      <div id="selected-name" class="drop-file"></div>
+    </div>
+
+    <div id="input-preview" class="input-preview">
+
+      <video
+        id="source-video"
+        playsinline
+        controls
+        preload="metadata"
+      ></video>
+
+      <div class="preview-shade"></div>
+
+      <div class="preview-top">
+        <div class="preview-label">INPUT VIDEO</div>
+        <div id="preview-size" class="preview-size">—</div>
+      </div>
+
+      <div class="preview-bottom">
+        <div id="preview-name" class="preview-name">—</div>
+        <div class="preview-change">CHANGE</div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- MEDIA -->
+  <div class="section-title">MEDIA INFORMATION</div>
+
+  <div class="media-box">
+
+    <div id="dr-banner" class="range-banner">
+      Output mengikuti sumber (8/10-bit)
+    </div>
+
+    <div class="file-row">
+      <span id="btn-clear-inline">Hapus file</span>
+    </div>
+
+    <div id="media-grid" class="media-grid">
+
+      <div class="media-item">
+        <div class="media-label">Size</div>
+        <div id="info-size" class="media-value">—</div>
+      </div>
+
+      <div class="media-item">
+        <div class="media-label">Duration</div>
+        <div id="info-duration" class="media-value">—</div>
+      </div>
+
+      <div class="media-item">
+        <div class="media-label">Resolution</div>
+        <div id="info-resolution" class="media-value">—</div>
+      </div>
+
+      <div class="media-item">
+        <div class="media-label">FPS</div>
+        <div id="info-fps" class="media-value">—</div>
+      </div>
+
+      <div class="media-item">
+        <div class="media-label">Dynamic</div>
+        <div id="info-dr" class="media-value">—</div>
+      </div>
+
+      <div class="media-item">
+        <div class="media-label">Rotation</div>
+        <div id="info-rotation" class="media-value">—</div>
+      </div>
+
+      <div class="media-item">
+        <div class="media-label">Bit Depth</div>
+        <div id="info-bitdepth" class="media-value">—</div>
+      </div>
+
+      <div class="media-item">
+        <div class="media-label">Audio</div>
+        <div id="info-audio" class="media-value">—</div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- SETTINGS -->
+  <div class="settings-head">
+    <div class="settings-title">RENDER SETTINGS</div>
+    <div class="preset-badge">Veryfast</div>
+  </div>
+
+  <div class="settings">
+
+    <button class="setting" data-crf="22">
+      <strong>CRF 22</strong>
+      <small>High Quality</small>
+    </button>
+
+    <button class="setting active" data-crf="24">
+      <strong>CRF 24</strong>
+      <small>Balanced</small>
+    </button>
+
+  </div>
+
+  <div class="encoder-note">
+    H.264 · CRF <span id="encoder-crf">24</span> · veryfast · no upscale
+  </div>
+
+  <!-- MUSIC (opsional) -->
+  <div class="music-row">
+    <button id="btn-music" class="music-btn" type="button">♪ MUSIK</button>
+    <span id="music-name" class="music-name">Audio asli dipakai</span>
+    <span id="btn-music-clear" class="music-clear" style="display:none">✕</span>
+    <input id="music-input" type="file" accept="audio/*,.mp3,.m4a,.aac,.wav,.flac,.ogg,.opus" hidden>
+  </div>
+
+  <!-- ACTION -->
+  <div class="action-row">
+    <button id="btn-render" class="render-btn">
+      ▶ RENDER VIDEO
+    </button>
+
+    <button id="btn-clear" class="clear-btn">
+      CLEAR
+    </button>
+  </div>
+
+  <!-- PIPELINE -->
+  <div class="pipeline">
+    <span id="pipe-render" class="active">① RENDER</span>
+    <span class="arrow">→</span>
+    <span id="pipe-patch">② PATCH</span>
+    <span class="arrow">→</span>
+    <span id="pipe-done">③ DONE</span>
+  </div>
+
+  <!-- PROCESS -->
+  <div class="section-title">RENDER PROCESS</div>
+
+  <div class="process-box">
+
+    <div class="process-top">
+      <span>Render progress</span>
+      <span id="progress-pct" class="percent">0%</span>
+    </div>
+
+    <div class="progress-track">
+      <div id="progress-bar" class="progress-bar"></div>
+    </div>
+
+    <div class="timing">
+      <span>Elapsed: <span id="time-elapsed">00:00</span></span>
+      <span>ETA: <span id="time-eta">--:--</span></span>
+    </div>
+
+    <div id="status" class="status">
+      Ready.
+    </div>
+
+    <div class="log-wrap">
+      <button id="btn-copy-log" class="copy-btn">COPY</button>
+      <div id="log" class="log"></div>
+    </div>
+
+  </div>
+
+  <!-- RESULT -->
+  <div id="output-section">
+
+    <div class="section-title">FINAL RESULT</div>
+
+    <div class="result-box">
+      <div class="final-grid">
+        <div><span>SIZE</span><strong id="final-size">—</strong></div>
+        <div><span>RESOLUTION</span><strong id="final-resolution">—</strong></div>
+        <div><span>FPS</span><strong id="final-fps">—</strong></div>
+        <div><span>BITRATE</span><strong id="final-bitrate">—</strong></div>
+      </div>
+
+      <div id="output-info" class="result-info">Waiting…</div>
+      <div id="patch-status" class="patch-status">Waiting for patch.</div>
+
+      <button id="btn-patch" class="patch-btn" style="display:none">AUTO PATCH</button>
+
+      <button id="btn-download" class="download-btn">
+        DOWNLOAD AGAIN
+      </button>
+    </div>
+
+  </div>
+
+  <!-- MODAL -->
+  <div id="modal-backdrop" class="modal-backdrop" aria-hidden="true">
+    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="modal-title">
+      <div class="modal-head">
+        <h2 id="modal-title" class="modal-title">Render Byte</h2>
+        <button id="modal-close" class="modal-close" type="button" aria-label="Close">×</button>
+      </div>
+      <div id="modal-body" class="modal-body"></div>
+    </div>
+  </div>
+
+  <footer>
+    Your video stays on this device · No video upload is required.
+  </footer>
+
+</div>
+
+<script type="module" src="./app.js?v=20261021-08"></script>
+
+</body>
+</html>
