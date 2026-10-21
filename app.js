@@ -3439,7 +3439,7 @@ function openTutorial() {
 const PATCH_URL = "./patch.html";
 
 /* Tombol PATCH sekarang pindah ke halaman sendiri (folder patch/) */
-const PATCH_PAGE = "./patch/";
+const PATCH_PAGE = "./patch/patch.html";
 
 function goPatchPage() {
   window.location.href = PATCH_PAGE;
