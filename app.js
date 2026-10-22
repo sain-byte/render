@@ -3339,7 +3339,7 @@ async function loadModalFragment(modal, url) {
 }
 
 
-/* Fetch an image (e.g. qris.png) into a slot inside the modal */
+/* Fetch the embedded QRIS image into a slot inside the modal */
 
 async function loadModalImage(modal, url, alt) {
 
@@ -3470,10 +3470,10 @@ function openPatch() {
 
 
 /* ============================================================
-   SUPPORT MODAL  (image: qris.png)
+   SUPPORT MODAL  (embedded QRIS image)
 ============================================================ */
 
-const QRIS_URL = "./qris.png";
+const QRIS_URL = window.QRIS_DATA;
 
 function ensureSupportModal() {
 
@@ -3503,7 +3503,10 @@ function ensureSupportModal() {
       </a>
 
       <div class="rb-support-note">
-        @totolat
+        Support helps keep Render Byte running,
+        cover project costs, and save for future
+        running shoes. Thank you for supporting
+        the project. 🫶
       </div>
     `
   );
