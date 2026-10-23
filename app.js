@@ -22,18 +22,11 @@ const els = {
   previewSize: $("preview-size"),
 
   clearBtn: $("btn-clear"),
-  clearInline: $("btn-clear-inline"),
 
-  drBanner: $("dr-banner"),
-
-  infoSize: $("info-size"),
-  infoDuration: $("info-duration"),
-  infoResolution: $("info-resolution"),
-  infoFps: $("info-fps"),
-  infoDr: $("info-dr"),
-  infoRotation: $("info-rotation"),
-  infoBitDepth: $("info-bitdepth"),
-  infoAudio: $("info-audio"),
+  previewDynamic: $("preview-dynamic"),
+  previewBitrate: $("preview-bitrate"),
+  previewBitDepth: $("preview-bitdepth"),
+  previewFileSize: $("preview-file-size"),
 
   crfButtons: document.querySelectorAll("[data-crf]"),
   encoderCrf: $("encoder-crf"),
@@ -695,7 +688,7 @@ function parseProbeText(text) {
     pixelFormat: "—",
     bitDepth: 8,
 
-    dynamicRange: "SDR",
+    dynamicRange: "N/A",
 
     colorspace: "—",
     colorTransfer: "—",
@@ -875,10 +868,14 @@ function parseProbeText(text) {
     meta.colorTransfer =
       "HLG";
 
-  } else {
+  } else if (
+    lower.includes("bt709") ||
+    lower.includes("iec61966-2-1") ||
+    lower.includes("gamma 2.2") ||
+    lower.includes("gamma 2.4")
+  ) {
 
-    meta.dynamicRange =
-      "SDR";
+    meta.dynamicRange = "SDR";
   }
 
 
@@ -952,93 +949,60 @@ function parseProbeText(text) {
 
 function updateMediaUI(meta) {
 
-  sourceMeta =
-    meta;
+  sourceMeta = meta;
 
-  if (els.infoSize) {
+  const fileSize = Number(selectedFile?.size) || 0;
+  const duration = Number(meta?.duration) || 0;
+  const averageBitrate = calculateBitrate(fileSize, duration);
+  const dynamicRange = meta?.dynamicRange || "N/A";
+  /* bit depth hanya ditampilkan jika ffmpeg benar-benar membaca pixel format */
+  const hasPixelInfo = Boolean(meta?.pixelFormat && meta.pixelFormat !== "—");
+  const bitDepthText = hasPixelInfo ? `${Number(meta.bitDepth) || 8}-bit` : "N/A";
 
-    els.infoSize.textContent =
-      formatBytes(
-        selectedFile?.size
-      );
+  if (els.previewDynamic) {
+    els.previewDynamic.textContent =
+      dynamicRange;
   }
 
-  if (els.infoDuration) {
-
-    els.infoDuration.textContent =
-      formatTime(
-        meta.duration
-      );
+  if (els.previewBitDepth) {
+    els.previewBitDepth.textContent =
+      bitDepthText;
   }
 
-  if (els.infoResolution) {
-
-    els.infoResolution.textContent =
-      meta.width &&
-      meta.height
-        ? `${meta.width}×${meta.height}`
-        : "—";
+  if (els.previewBitrate) {
+    els.previewBitrate.textContent =
+      averageBitrate > 0
+        ? `AVG ${formatBitrate(averageBitrate)}`
+        : "AVG N/A";
   }
 
-  if (els.infoFps) {
-
-    els.infoFps.textContent =
-      meta.fps
-        ? meta.fps.toFixed(2)
-        : "—";
-  }
-
-  if (els.infoDr) {
-
-    els.infoDr.textContent =
-      meta.dynamicRange;
-  }
-
-  if (els.infoRotation) {
-
-    els.infoRotation.textContent =
-      `${meta.rotation || 0}°`;
-  }
-
-  if (els.infoBitDepth) {
-
-    els.infoBitDepth.textContent =
-      `${meta.bitDepth}-bit`;
-  }
-
-  if (els.infoAudio) {
-
-    els.infoAudio.textContent =
-      meta.audioPresent
-        ? `${String(
-            meta.audioCodec ||
-            "AAC"
-          ).toUpperCase()} / present`
-        : "None";
-  }
-
-  if (els.drBanner) {
-
-    els.drBanner.textContent =
-      `${meta.dynamicRange} · output ${getOutputPixFmt(meta) === "yuv420p10le" ? 10 : 8}-bit`;
+  if (els.previewFileSize) {
+    els.previewFileSize.textContent =
+      formatBytes(fileSize);
   }
 
   if (els.previewSize) {
-
     els.previewSize.textContent =
-      meta.width &&
-      meta.height
-
-        ? `${meta.width}×${meta.height} · ${
-            meta.fps
-              ? meta.fps.toFixed(2)
-              : "—"
-          } fps`
-
+      meta.width && meta.height
+        ? `${meta.width}×${meta.height} · ${meta.fps ? meta.fps.toFixed(2) : "—"} fps`
         : "—";
   }
 }
 
+/* Bersihkan info overlay (dipanggil saat file diganti atau di-reset) */
+
+function resetMediaOverlay() {
+
+  [
+    els.previewSize,
+    els.previewDynamic,
+    els.previewBitDepth,
+    els.previewBitrate,
+    els.previewFileSize
+  ].forEach(el => {
+    if (el) el.textContent = "—";
+  });
+}
 
 /* ============================================================
    SCALE
@@ -1542,6 +1506,8 @@ async function selectFile(file) {
   sourceMeta =
     null;
 
+  resetMediaOverlay();
+
   if (els.renderBtn) {
     els.renderBtn.disabled =
       true;
@@ -1707,29 +1673,7 @@ function clearAll() {
   }
 
 
-  const infoFields = [
-
-    els.infoSize,
-    els.infoDuration,
-    els.infoResolution,
-    els.infoFps,
-    els.infoDr,
-    els.infoRotation,
-    els.infoBitDepth,
-    els.infoAudio
-  ];
-
-
-  infoFields.forEach(
-    el => {
-
-      if (el) {
-        el.textContent =
-          "—";
-      }
-
-    }
-  );
+  resetMediaOverlay();
 
 
   if (els.outputSection) {
@@ -3010,17 +2954,6 @@ els.patchBtn?.addEventListener(
 els.clearBtn?.addEventListener(
   "click",
   clearAll
-);
-
-
-els.clearInline?.addEventListener(
-  "click",
-  event => {
-
-    event.stopPropagation();
-
-    clearAll();
-  }
 );
 
 

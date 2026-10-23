@@ -6,6 +6,11 @@
   <meta name="theme-color" content="#06110d">
   <title>Render Byte</title>
 
+  <link rel="apple-touch-icon" sizes="180x180" href="./apple-touch-icon.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="./favicon-32x32.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="./favicon-16x16.png">
+  <link rel="manifest" href="./site.webmanifest">
+
   <style>
     *{box-sizing:border-box}
 
@@ -222,7 +227,7 @@
       right:13px;
       top:11px;
       display:flex;
-      align-items:center;
+      align-items:flex-start;
       justify-content:space-between;
       gap:10px;
       z-index:2;
@@ -243,6 +248,38 @@
       color:#80b5a0;
       font-size:9px;
       white-space:nowrap;
+    }
+
+    .preview-top-right{
+      display:flex;
+      flex-direction:column;
+      align-items:flex-end;
+      gap:6px;
+      min-width:0;
+      max-width:62%;
+    }
+
+    .preview-meta{
+      min-width:0;
+      max-width:100%;
+      padding:7px 9px;
+      border:1px solid rgba(255,255,255,.14);
+      border-radius:8px;
+      background:rgba(0,0,0,.7);
+      color:#f2f7f5;
+      font-size:9px;
+      line-height:1.45;
+      font-variant-numeric:tabular-nums;
+      text-align:right;
+      pointer-events:none;
+      backdrop-filter:blur(8px);
+      -webkit-backdrop-filter:blur(8px);
+    }
+
+    .preview-line{
+      white-space:nowrap;
+      overflow:hidden;
+      text-overflow:ellipsis;
     }
 
     .preview-bottom{
@@ -385,15 +422,16 @@
 
     .settings{
       display:grid;
-      grid-template-columns:1fr 1fr;
-      gap:8px;
+      grid-template-columns:repeat(4,minmax(0,1fr));
+      gap:6px;
     }
 
     .setting{
+      min-width:0;
       border:1px solid #173028;
       background:#07110d;
-      border-radius:10px;
-      padding:11px 10px;
+      border-radius:9px;
+      padding:10px 3px;
       text-align:center;
       color:#a9b7b2;
       cursor:pointer;
@@ -407,7 +445,7 @@
 
     .setting strong{
       display:block;
-      font-size:13px;
+      font-size:12px;
       font-weight:400;
     }
 
@@ -415,7 +453,8 @@
       display:block;
       margin-top:4px;
       color:#64746e;
-      font-size:9px;
+      font-size:8px;
+      line-height:1.2;
     }
 
     .encoder-note{
@@ -627,6 +666,11 @@
       .brand h1{
         font-size:23px;
       }
+
+      .settings{gap:5px}
+      .setting{padding:10px 2px}
+      .setting strong{font-size:11px}
+      .setting small{font-size:7px}
     }
 
     .pipeline span.complete{color:#32d899}
@@ -708,70 +752,20 @@
 
       <div class="preview-top">
         <div class="preview-label">INPUT VIDEO</div>
-        <div id="preview-size" class="preview-size">—</div>
+        <div class="preview-top-right">
+          <div id="preview-size" class="preview-size">—</div>
+          <div class="preview-meta" aria-live="polite">
+            <div id="preview-dynamic" class="preview-line">—</div>
+            <div id="preview-bitdepth" class="preview-line">—</div>
+            <div id="preview-bitrate" class="preview-line">AVG —</div>
+            <div id="preview-file-size" class="preview-line">—</div>
+          </div>
+        </div>
       </div>
 
       <div class="preview-bottom">
         <div id="preview-name" class="preview-name">—</div>
         <div class="preview-change">CHANGE</div>
-      </div>
-
-    </div>
-  </div>
-
-  <!-- MEDIA -->
-  <div class="section-title">MEDIA INFORMATION</div>
-
-  <div class="media-box">
-
-    <div id="dr-banner" class="range-banner">
-      Output mengikuti sumber (8/10-bit)
-    </div>
-
-    <div class="file-row">
-      <span id="btn-clear-inline">Hapus file</span>
-    </div>
-
-    <div id="media-grid" class="media-grid">
-
-      <div class="media-item">
-        <div class="media-label">Size</div>
-        <div id="info-size" class="media-value">—</div>
-      </div>
-
-      <div class="media-item">
-        <div class="media-label">Duration</div>
-        <div id="info-duration" class="media-value">—</div>
-      </div>
-
-      <div class="media-item">
-        <div class="media-label">Resolution</div>
-        <div id="info-resolution" class="media-value">—</div>
-      </div>
-
-      <div class="media-item">
-        <div class="media-label">FPS</div>
-        <div id="info-fps" class="media-value">—</div>
-      </div>
-
-      <div class="media-item">
-        <div class="media-label">Dynamic</div>
-        <div id="info-dr" class="media-value">—</div>
-      </div>
-
-      <div class="media-item">
-        <div class="media-label">Rotation</div>
-        <div id="info-rotation" class="media-value">—</div>
-      </div>
-
-      <div class="media-item">
-        <div class="media-label">Bit Depth</div>
-        <div id="info-bitdepth" class="media-value">—</div>
-      </div>
-
-      <div class="media-item">
-        <div class="media-label">Audio</div>
-        <div id="info-audio" class="media-value">—</div>
       </div>
 
     </div>
@@ -785,14 +779,24 @@
 
   <div class="settings">
 
-    <button class="setting" data-crf="22">
-      <strong>CRF 22</strong>
-      <small>High Quality</small>
+    <button class="setting" data-crf="18" type="button">
+      <strong>CRF 18</strong>
+      <small>V. High</small>
     </button>
 
-    <button class="setting active" data-crf="24">
-      <strong>CRF 24</strong>
+    <button class="setting" data-crf="20" type="button">
+      <strong>CRF 20</strong>
+      <small>High</small>
+    </button>
+
+    <button class="setting" data-crf="22" type="button">
+      <strong>CRF 22</strong>
       <small>Balanced</small>
+    </button>
+
+    <button class="setting active" data-crf="24" type="button">
+      <strong>CRF 24</strong>
+      <small>Compact</small>
     </button>
 
   </div>
